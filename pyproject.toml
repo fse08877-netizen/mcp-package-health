@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-package-health"
+version = "0.1.0"
+description = "MCP server for real-time package health, vulnerability scanning, and dependency graphs"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+authors = [{ name = "fse08877-netizen" }]
+keywords = ["mcp", "package-health", "vulnerability", "dependencies", "open-source"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "mcp[cli]>=1.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "anyio",
+]
+
+[project.scripts]
+mcp-package-health = "mcp_package_health.server:mcp.run"
+
+[project.urls]
+Homepage = "https://github.com/fse08877-netizen/mcp-package-health"
+Repository = "https://github.com/fse08877-netizen/mcp-package-health"
+Issues = "https://github.com/fse08877-netizen/mcp-package-health/issues"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
