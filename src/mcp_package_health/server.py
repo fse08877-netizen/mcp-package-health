@@ -1,13 +1,17 @@
 """MCP server: package health, vulnerability scan, and dependency graph."""
-import json, httpx
-from mcp.server.fastmcp import FastMCP
+import httpx
 
-mcp = FastMCP("mcp-package-health")
+try:
+    from mcp.server.fastmcp import FastMCP
+    mcp = FastMCP("mcp-package-health")
+    _MCP_AVAILABLE = True
+except ImportError:
+    mcp = None
+    _MCP_AVAILABLE = False
 
 
-@mcp.tool()
 async def get_package_health(package_name: str, ecosystem: str = "pypi") -> dict:
-    """Return health metrics for a package: downloads, latest version, release age."""
+    """Return health metrics for a package: latest version, release age, license."""
     ecosystem = ecosystem.lower()
     if ecosystem == "pypi":
         async with httpx.AsyncClient(timeout=10) as client:
@@ -34,7 +38,6 @@ async def get_package_health(package_name: str, ecosystem: str = "pypi") -> dict
     raise ValueError(f"Unsupported ecosystem: {ecosystem}. Supported: pypi")
 
 
-@mcp.tool()
 async def check_vulnerabilities(package_name: str, version: str) -> dict:
     """Query OSV.dev for known CVEs / vulnerabilities for a given package+version."""
     payload = {"version": version, "package": {"name": package_name, "ecosystem": "PyPI"}}
@@ -58,9 +61,8 @@ async def check_vulnerabilities(package_name: str, version: str) -> dict:
     }
 
 
-@mcp.tool()
 async def get_dependency_graph(package_name: str) -> dict:
-    """Return direct and transitive dependencies for a PyPI package."""
+    """Return direct dependencies for a PyPI package."""
     async with httpx.AsyncClient(timeout=10) as client:
         r = await client.get(f"https://pypi.org/pypi/{package_name}/json")
         r.raise_for_status()
@@ -78,5 +80,15 @@ async def get_dependency_graph(package_name: str) -> dict:
     }
 
 
+# register tools only if mcp is available
+if _MCP_AVAILABLE:
+    mcp.tool()(get_package_health)
+    mcp.tool()(check_vulnerabilities)
+    mcp.tool()(get_dependency_graph)
+
+
 if __name__ == "__main__":
-    mcp.run()
+    if _MCP_AVAILABLE:
+        mcp.run()
+    else:
+        print("Install mcp: pip install mcp-package-health[mcp]")
